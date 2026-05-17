@@ -1,1 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Make a Wish</title>
 
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: black;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    overflow: hidden;
+}
+
+h1 {
+    color: white;
+    margin-bottom: 40px;
+}
+
+/* Candle */
+.candle {
+    width: 60px;
+    height: 180px;
+    background: #fff;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+}
+
+/* Flame */
+.flame {
+    width: 26px;
+    height: 55px;
+    background: radial-gradient(circle at 50% 40%, #ffd000, #ff6a00);
+    border-radius: 50%;
+    position: absolute;
+    top: -45px;
+    left: 17px;
+    box-shadow: 0 0 30px orange;
+    animation: flicker 0.15s infinite alternate;
+    transition: opacity 0.6s ease;
+}
+
+@keyframes flicker {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.08); }
+}
+
+button {
+    margin-top: 30px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Make a Wish ✨</h1>
+
+<div class="candle">
+    <div class="flame" id="flame"></div>
+</div>
+
+<button onclick="playSong()">Play me 🎵</button>
+
+<!-- 🎵 Happy Birthday song (instrumental/public version) -->
+<audio id="song">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7c0d3b1c6d.mp3?filename=happy-birthday-to-you-piano-version-112196.mp3" type="audio/mp3">
+</audio>
+
+<script>
+
+let flameOn = true;
+let silenceTime = 0;
+
+const flame = document.getElementById("flame");
+
+// 🎵 SONG
+function playSong() {
+    document.getElementById("song").play();
+}
+
+// 🌬️ MICROPHONE DETECTION
+navigator.mediaDevices.getUserMedia({ audio: true })
+.then(stream => {
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const mic = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+
+    mic.connect(analyser);
+
+    const data = new Uint8Array(analyser.frequencyBinCount);
+
+    function loop() {
+        analyser.getByteFrequencyData(data);
+
+        let volume = data.reduce((a,b)=>a+b)/data.length;
+
+        // 💨 blow out
+        if (volume > 25 && flameOn) {
+            flameOn = false;
+            flame.style.opacity = "0";
+        }
+
+        // 🔥 relight
+        if (!flameOn) {
+            silenceTime++;
+
+            if (silenceTime > 80) {
+                flameOn = true;
+                silenceTime = 0;
+                flame.style.opacity = "1";
+            }
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+})
+.catch(() => {
+    alert("Please allow microphone access to blow the candle.");
+});
+
+</script>
+
+</body>
+</html>
